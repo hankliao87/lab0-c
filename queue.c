@@ -238,5 +238,69 @@ void q_reverse(struct list_head *head)
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
+ * TODO:
+ * https://hackmd.io/@sysprog/c-linked-list#Linux-%E6%A0%B8%E5%BF%83%E7%9A%84-list_sort-%E5%AF%A6%E4%BD%9C
  */
-void q_sort(struct list_head *head) {}
+struct list_head *merge(struct list_head *l1, struct list_head *l2)
+{
+    if (!l1)
+        return l2;
+    if (!l2)
+        return l1;
+
+    struct list_head *head = NULL, **ptr = &head, **node;
+
+    for (node = NULL; l1 && l2; *node = (*node)->next) {
+        element_t *elem1 = list_entry(l1, element_t, list);
+        element_t *elem2 = list_entry(l2, element_t, list);
+        size_t len_value = min(sizeof(elem1->value), sizeof(elem2->value));
+
+        node = (strncmp(elem1->value, elem2->value, len_value) < 0) ? &l1 : &l2;
+        *ptr = *node;
+        ptr = &(*ptr)->next;
+    }
+    *ptr = (l2 == NULL) ? l1 : l2;
+
+    return head;
+}
+
+struct list_head *q_sort_helper(struct list_head *head)
+{
+    if (head == NULL || head->next == NULL)
+        return head;
+
+    struct list_head *slow = head, *fast = head->next;
+
+    while (fast && fast->next) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+
+    struct list_head *mid = slow->next;
+    slow->next = NULL;
+
+    struct list_head *l1 = q_sort_helper(head);
+    struct list_head *l2 = q_sort_helper(mid);
+
+    return merge(l1, l2);
+}
+
+void q_sort(struct list_head *head)
+{
+    if (head == NULL || list_empty(head) || list_is_singular(head))
+        return;
+
+    head->prev->next = NULL;
+
+    struct list_head *node = q_sort_helper(head->next);
+    head->next = node;
+
+    struct list_head *ptr = head;
+    while (node != NULL) {
+        node->prev = ptr;
+        ptr = node;
+        node = node->next;
+    }
+    ptr->next = head;
+    head->prev = ptr;
+}
