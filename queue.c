@@ -58,12 +58,19 @@ void q_free(struct list_head *l)
  */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (head == NULL)
+        return false;
+
     element_t *elem = malloc(sizeof(element_t));
     if (elem == NULL)
         return false;
 
     size_t length = strlen(s) + 1;
     elem->value = malloc(sizeof(char) * length);
+    if (elem->value == NULL) {
+        free(elem);
+        return false;
+    }
     strncpy(elem->value, s, length);
     list_add(&elem->list, head);
     return true;
@@ -78,12 +85,19 @@ bool q_insert_head(struct list_head *head, char *s)
  */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (head == NULL)
+        return false;
+
     element_t *elem = malloc(sizeof(element_t));
     if (elem == NULL)
         return false;
 
     size_t length = strlen(s) + 1;
     elem->value = malloc(sizeof(char) * length);
+    if (elem->value == NULL) {
+        free(elem);
+        return false;
+    }
     strncpy(elem->value, s, length);
     list_add_tail(&elem->list, head);
     return true;
@@ -264,6 +278,8 @@ void q_swap(struct list_head *head)
  */
 void q_reverse(struct list_head *head)
 {
+    if (head == NULL || list_empty(head) || list_is_singular(head))
+        return;
     struct list_head *node, *safe;
     list_for_each_safe (node, safe, head)
         list_move(node, head);
