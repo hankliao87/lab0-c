@@ -43,7 +43,6 @@ void q_free(struct list_head *l)
     element_t *elem, *safe;
     list_for_each_entry_safe (elem, safe, l, list) {
         list_del(&elem->list);
-        // free(&elem->list);
         q_release_element(elem);
     }
     free(l);
@@ -71,6 +70,7 @@ bool q_insert_head(struct list_head *head, char *s)
         free(elem);
         return false;
     }
+
     strncpy(elem->value, s, length);
     list_add(&elem->list, head);
     return true;
@@ -98,6 +98,7 @@ bool q_insert_tail(struct list_head *head, char *s)
         free(elem);
         return false;
     }
+
     strncpy(elem->value, s, length);
     list_add_tail(&elem->list, head);
     return true;
@@ -208,34 +209,40 @@ bool q_delete_mid(struct list_head *head)
  * Note: this function always be called after sorting, in other words,
  * list is guaranteed to be sorted in ascending order.
  */
+int value_cmp(struct list_head *node1, struct list_head *node2)
+{
+    element_t *elem1 = list_entry(node1, element_t, list);
+    element_t *elem2 = list_entry(node2, element_t, list);
+    size_t len_value = min(sizeof(elem1->value), sizeof(elem2->value));
+    return strncmp(elem1->value, elem2->value, len_value);
+}
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
     if (head == NULL)
         return false;
+
     struct list_head *node, *safe;
     list_for_each_safe (node, safe, head) {
         bool remove_dup = false;
         if (safe == head)
             break;
-        element_t *elem1 = list_entry(node, element_t, list);
-        element_t *elem2 = list_entry(safe, element_t, list);
-        size_t len_value = min(sizeof(elem1->value), sizeof(elem2->value));
-        while (strncmp(elem1->value, elem2->value, len_value) == 0) {
+
+        while (value_cmp(node, safe) == 0) {
             remove_dup = true;
+            element_t *elem1 = list_entry(node, element_t, list);
             list_del(&elem1->list);
             q_release_element(elem1);
+
             node = safe;
             safe = node->next;
             if (safe == head)
                 break;
-            elem1 = list_entry(node, element_t, list);
-            elem2 = list_entry(safe, element_t, list);
-            len_value = min(sizeof(elem1->value), sizeof(elem2->value));
         }
+
         if (remove_dup) {
             remove_dup = false;
-            elem1 = list_entry(node, element_t, list);
+            element_t *elem1 = list_entry(node, element_t, list);
             list_del(&elem1->list);
             q_release_element(elem1);
         }
@@ -302,11 +309,7 @@ struct list_head *merge(struct list_head *l1, struct list_head *l2)
     struct list_head *head = NULL, **ptr = &head, **node;
 
     for (node = NULL; l1 && l2; *node = (*node)->next) {
-        element_t *elem1 = list_entry(l1, element_t, list);
-        element_t *elem2 = list_entry(l2, element_t, list);
-        size_t len_value = min(sizeof(elem1->value), sizeof(elem2->value));
-
-        node = (strncmp(elem1->value, elem2->value, len_value) < 0) ? &l1 : &l2;
+        node = (value_cmp(l1, l2) < 0) ? &l1 : &l2;
         *ptr = *node;
         ptr = &(*ptr)->next;
     }
@@ -320,12 +323,10 @@ struct list_head *q_sort_helper(struct list_head *head)
     if (head == NULL || head->next == NULL)
         return head;
 
-    struct list_head *slow = head, *fast = head->next;
-
-    while (fast && fast->next) {
-        fast = fast->next->next;
+    struct list_head *slow = head;
+    for (struct list_head *fast = head->next; fast && fast->next;
+         fast = fast->next->next)
         slow = slow->next;
-    }
 
     struct list_head *mid = slow->next;
     slow->next = NULL;
