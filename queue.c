@@ -42,7 +42,7 @@ void q_free(struct list_head *l)
 
     element_t *elem, *safe;
     list_for_each_entry_safe (elem, safe, l, list) {
-        // list_del(&elem->list);
+        list_del(&elem->list);
         // free(&elem->list);
         q_release_element(elem);
     }
@@ -137,7 +137,6 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
  */
 void q_release_element(element_t *e)
 {
-    list_del(&e->list);
     free(e->value);
     free(e);
 }
@@ -177,6 +176,7 @@ bool q_delete_mid(struct list_head *head)
         slow = slow->next;
 
     element_t *elem = list_entry(slow, element_t, list);
+    list_del(&elem->list);
     q_release_element(elem);
     return true;
 }
@@ -205,6 +205,7 @@ bool q_delete_dup(struct list_head *head)
         size_t len_value = min(sizeof(elem1->value), sizeof(elem2->value));
         while (strncmp(elem1->value, elem2->value, len_value) == 0) {
             remove_dup = true;
+            list_del(&elem1->list);
             q_release_element(elem1);
             node = safe;
             safe = node->next;
@@ -217,6 +218,7 @@ bool q_delete_dup(struct list_head *head)
         if (remove_dup) {
             remove_dup = false;
             elem1 = list_entry(node, element_t, list);
+            list_del(&elem1->list);
             q_release_element(elem1);
         }
     }
