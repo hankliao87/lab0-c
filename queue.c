@@ -135,6 +135,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
  */
 void q_release_element(element_t *e)
 {
+    list_del(&e->list);
     free(e->value);
     free(e);
 }
@@ -173,7 +174,6 @@ bool q_delete_mid(struct list_head *head)
          fast != head && fast->next != head; fast = fast->next->next)
         slow = slow->next;
 
-    list_del(slow);
     element_t *elem = list_entry(slow, element_t, list);
     q_release_element(elem);
     return true;
