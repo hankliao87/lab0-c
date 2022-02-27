@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -313,7 +314,7 @@ struct list_head *merge(struct list_head *l1, struct list_head *l2)
         *ptr = *node;
         ptr = &(*ptr)->next;
     }
-    *ptr = (l2 == NULL) ? l1 : l2;
+    *ptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
 
     return head;
 }
